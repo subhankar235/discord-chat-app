@@ -1,0 +1,94 @@
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>chat app</title>
+  </head>
+  <body>
+    <div id="user-list">
+      <h3>online users</h3>
+      <ul id="users"></ul>
+    </div>
+
+    <div id="chat"></div>
+
+    <form id="message-form">
+      <input 
+      type="text"
+      id="msg-input"
+      placeholder="enter your msg..." 
+      required/>
+      <button>send</button>
+    </form>
+   <script src="/socket.io/socket.io.js"></script>
+
+    <!-- connect in socket.io server -->
+
+    <script>
+    const socket=io();
+
+
+
+     const chat=document.getElementById('chat');
+     const userList=document.getElementById('users');
+     const messageForm=document.getElementById('message-form');
+     const messageInput=document.getElementById('msg-input');
+
+//giving name coz --think just first time opening wp,,after that it automatically remember
+     const userName=prompt('enter your user name');
+
+     //sends an event from one side to the other.
+     //the browser (front-end) is telling the server: “Hey, a user has joined!” and sends the username.
+     socket.emit('join',userName);
+
+     //html recevies from server.js
+socket.on("user joined", (user) => {
+  addmsg(`${user} joined the chat`);
+});
+
+//html listening the userlist recevies from server
+socket.on("userList",(users)=>{
+  userList.innerHTML=users.map((user)=> `<li>${user}</li>`).join("");
+
+});
+
+
+
+//handle form submission--
+messageForm.addEventListener('submit',(event)=>{
+  event.preventDefault();
+
+
+  const extactMessageText=messageInput.value.trim();
+
+  if(extactMessageText){
+    socket.emit('chatMessage',{
+      userName,text:extactMessageText
+    });
+
+messageInput.value="";
+  }
+})
+
+
+
+//listen for chatmsg events formt the server--
+socket.on('chatMessage',(message)=>{
+  addmsg(`${message.userName}:${message.text}`);
+});
+
+
+//disconnect case--
+socket.on('userLeft',(user)=>{
+  addmsg(`${user} has left the chat`);
+})
+
+function addmsg(input){
+const messageElement=document.createElement('div');
+messageElement.textContent=input
+chat.appendChild(messageElement);
+   }
+
+    </script>
+  </body>
+</html>
